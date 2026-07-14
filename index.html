@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Farm Visit Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --forest:#123723;
+    --brand:#1f6b3f;
+    --brand-dark:#164f2e;
+    --brand-light:#e7f2eb;
+    --bg:#f4f6f3;
+    --card:#ffffff;
+    --ink:#182420;
+    --muted:#6b7a70;
+    --line:#e1e7e1;
+    --amber:#c9832b;
+    --red:#b4402a;
+    --gold:#caa24a;
+    --green-dot:#2e9955;
+    --yellow-dot:#e0b13a;
+    --red-dot:#c0392b;
+    --radius:12px;
+    --shadow:0 1px 2px rgba(18,55,35,.06), 0 6px 20px rgba(18,55,35,.05);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+  body{-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em;}
+  input,select,textarea,button{font-family:inherit;font-size:14px;}
+  button{cursor:pointer;}
+  ::selection{background:var(--gold);color:#fff;}
+
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    background:var(--forest);
+    color:#fff;
+    display:flex;align-items:center;gap:14px;
+    padding:10px 16px;
+  }
+  .topbar .logo{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(155deg,var(--gold),var(--amber));
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;flex:none;
+  }
+  .topbar .titles{flex:1;min-width:0;}
+  .topbar .titles h1{font-size:15px;color:#fff;line-height:1.2;}
+  .topbar .titles p{margin:0;font-size:11px;color:#b9ccbe;letter-spacing:.02em;}
+  .tabbtn{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    color:#dcecdf;
+    padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:600;
+    display:flex;align-items:center;gap:6px;
+    transition:background .15s;
+  }
+  .tabbtn.active{background:#fff;color:var(--brand-dark);border-color:#fff;}
+  .tabbtn:hover:not(.active){background:rgba(255,255,255,.16);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 90px;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px;margin-bottom:14px;
+  }
+  .sec-head{
+    display:flex;align-items:center;gap:9px;margin-bottom:12px;
+    padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  .sec-num{
+    width:22px;height:22px;border-radius:6px;background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex:none;
+  }
+  .sec-head h2{font-size:14.5px;color:var(--forest);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+  .field label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .field input[type=text],.field input[type=date],.field input[type=number],.field input[type=tel],.field select,.field textarea{
+    border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;color:var(--ink);width:100%;
+  }
+  .field textarea{resize:vertical;min-height:56px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand);outline-offset:1px;background:#fff;}
+  .checkrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:2px;}
+  .chip-check{display:flex;align-items:center;gap:6px;font-size:13px;}
+  .chip-check input{width:16px;height:16px;accent-color:var(--brand);}
+
+  @media (max-width:760px){ .grid2,.grid3{grid-template-columns:1fr;} }
+
+  table.prod{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.prod th{
+    text-align:left;background:var(--brand-light);color:var(--brand-dark);
+    padding:7px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);
+  }
+  table.prod td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.prod input, table.prod select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:#fbfcfb;}
+  .tbl-scroll{overflow-x:auto;}
+  .legend-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted);align-items:center;}
+  .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+
+  .checklist-cat{margin-bottom:16px;}
+  .cat-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+  .cat-icon{
+    width:30px;height:30px;border-radius:9px;background:var(--brand-light);color:var(--brand-dark);
+    display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;
+  }
+  .cat-head h3{font-size:13px;color:var(--forest);letter-spacing:.02em;text-transform:uppercase;}
+  .chk-item{
+    display:grid;grid-template-columns:1fr auto auto auto 1.2fr;gap:8px;align-items:center;
+    padding:7px 4px;border-bottom:1px solid #eef2ee;
+  }
+  .chk-item:last-child{border-bottom:none;}
+  .chk-item .item-name{font-size:13px;}
+  .yn{display:flex;align-items:center;justify-content:center;}
+  .yn input{width:17px;height:17px;}
+  .yn.yes input{accent-color:#1c7a3d;}
+  .yn.no input{accent-color:#a3341f;}
+  .yn.na input{accent-color:#8a8f8c;}
+  .chk-item input[type=text]{border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12.5px;width:100%;background:#fbfcfb;}
+  .chk-col-labels{display:grid;grid-template-columns:1fr auto auto auto 1.2fr;gap:8px;padding:0 4px 6px;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .chk-col-labels span{text-align:center;}
+  .chk-col-labels span:first-child,.chk-col-labels span:last-child{text-align:left;}
+  @media (max-width:640px){
+    .chk-item,.chk-col-labels{grid-template-columns:1.4fr repeat(3,28px) 0;}
+    .chk-item input[type=text]{grid-column:1/-1;margin-top:4px;}
+    .chk-col-labels span:last-child{display:none;}
+  }
+
+  .score-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .score-bar-outer{flex:1;min-width:220px;}
+  .score-track{position:relative;height:14px;border-radius:8px;background:linear-gradient(90deg,#c0392b,#e08a2e,#e8c53d,#8fbf4e,#1f8f4e);}
+  .score-marker{
+    position:absolute;top:-6px;width:4px;height:26px;background:var(--ink);border-radius:2px;
+    box-shadow:0 0 0 2px #fff;transform:translateX(-2px);
+  }
+  .score-scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:4px;}
+  input[type=range].score-range{width:100%;margin-top:10px;accent-color:var(--brand-dark);}
+  .score-badge{
+    background:var(--brand-light);border:1px solid #cfe4d7;border-radius:12px;padding:10px 18px;text-align:center;min-width:110px;
+  }
+  .score-badge .num{font-size:22px;font-weight:800;color:var(--forest);}
+  .score-badge .lbl{font-size:11.5px;font-weight:700;margin-top:2px;}
+
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+  .photo-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fbfcfb;display:flex;flex-direction:column;}
+  .photo-card-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--brand-light);}
+  .photo-num{width:20px;height:20px;border-radius:6px;background:var(--brand-dark);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .photo-card img{width:100%;height:130px;object-fit:cover;display:block;background:#eef1ee;}
+  .photo-card .del{background:rgba(20,20,20,.55);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:1;}
+  .photo-fields{padding:8px 9px 10px;display:flex;flex-direction:column;gap:6px;}
+  .photo-fields label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .photo-fields textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12px;resize:vertical;min-height:34px;background:#fff;}
+  .photo-add{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    border:2px dashed #c8d6cc;border-radius:10px;min-height:150px;color:var(--brand-dark);font-size:12px;font-weight:600;
+    background:#fafcfa;
+  }
+  .photo-add input{display:none;}
+
+  table.prio{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.prio th{text-align:left;background:var(--brand-light);color:var(--brand-dark);padding:7px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  table.prio td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.prio input,table.prio select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:#fbfcfb;}
+  .status-toggle{border:none;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;width:100%;}
+  .status-toggle.open{background:#fdf2df;color:#a1670f;}
+  .status-toggle.done{background:#e4f4e8;color:#1c7a3d;}
+  .row-del{background:#fdece8;color:#a3341f;border:none;border-radius:6px;width:26px;height:26px;font-size:14px;}
+  .prio-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+
+  .sig-box{border:1px solid var(--line);border-radius:10px;background:#fbfcfb;padding:10px;}
+  .sig-canvas-wrap{border:1px dashed #cdd8d0;border-radius:8px;overflow:hidden;touch-action:none;background:#fff;}
+  canvas.sig{width:100%;height:110px;display:block;cursor:crosshair;}
+  .sig-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+  .sig-actions button{background:none;border:none;color:var(--brand-dark);font-size:12px;font-weight:700;padding:4px;}
+
+  .btn{
+    border:none;border-radius:9px;padding:9px 14px;font-weight:700;font-size:13px;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn-primary{background:var(--brand);color:#fff;}
+  .btn-primary:hover{background:var(--brand-dark);}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{background:var(--bg);}
+  .btn-danger{background:#fdece8;color:#a3341f;}
+  .btn-sm{padding:6px 10px;font-size:12px;}
+
+  .actionbar{
+    position:sticky;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+    padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;box-shadow:0 -6px 16px rgba(0,0,0,.04);
+  }
+
+  .hist-toolbar{display:flex;gap:8px;margin-bottom:12px;}
+  .hist-toolbar input{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:#fbfcfb;}
+  .hist-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 10px;border-bottom:1px solid var(--line);cursor:pointer;
+  }
+  .hist-row:hover{background:var(--brand-light);}
+  .hist-row .main{min-width:0;}
+  .hist-row .rno{font-weight:700;font-size:13.5px;color:var(--forest);}
+  .hist-row .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .badge-completed{background:#e4f4e8;color:#1c7a3d;}
+  .badge-draft{background:#fdf2df;color:#a1670f;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty-state .ic{font-size:34px;margin-bottom:8px;}
+
+  .hidden{display:none !important;}
+  .toast{
+    position:fixed;left:50%;bottom:78px;transform:translateX(-50%);
+    background:var(--forest);color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;
+    max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;bottom:88px;}
+
+  .readonly-view .field input,.readonly-view .field textarea{background:#f4f6f4;color:var(--ink);}
+  @media print{
+    .topbar,.actionbar,.hist-toolbar,.print-hide{display:none !important;}
+    body{background:#fff;}
+    .card{box-shadow:none;border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🐔</div>
+  <div class="titles">
+    <h1>Farm Visit Report</h1>
+    <p>CluckWise Poultry Consulting</p>
+  </div>
+  <button class="tabbtn active" id="tab-new" onclick="showView('form')">📝 New / Edit</button>
+  <button class="tabbtn" id="tab-hist" onclick="showView('history')">🕘 History</button>
+</div>
+
+<div class="wrap">
+
+  <div id="view-form">
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">1</div><h2>Farm Information</h2></div>
+      <div class="grid2">
+        <div class="field"><label>Report No.</label><input type="text" id="f-reportNo"></div>
+        <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+        <div class="field"><label>Farm / Company</label><input type="text" id="f-farm" placeholder="e.g. Green Valley Farms"></div>
+        <div class="field"><label>Farm Owner / Manager</label><input type="text" id="f-owner"></div>
+        <div class="field"><label>Location</label><input type="text" id="f-location"></div>
+        <div class="field"><label>Contact No.</label><input type="tel" id="f-contact"></div>
+      </div>
+      <div class="field">
+        <label>Type of Operation</label>
+        <div class="checkrow" id="f-optype">
+          <label class="chip-check"><input type="checkbox" value="Breeder">Breeder</label>
+          <label class="chip-check"><input type="checkbox" value="Layer">Layer</label>
+          <label class="chip-check"><input type="checkbox" value="Broiler">Broiler</label>
+          <label class="chip-check"><input type="checkbox" value="Others">Others</label>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>House No. / Area</label><input type="text" id="f-house"></div>
+        <div class="field"><label>Flock / Batch No.</label><input type="text" id="f-flock"></div>
+        <div class="field"><label>Bird Age (Weeks)</label><input type="number" id="f-birdage"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Bird Breed / Strain</label><input type="text" id="f-breed"></div>
+        <div class="field"><label>No. of Birds (Current)</label><input type="number" id="f-birdcount"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">2</div><h2>Previous Visit Follow-up</h2></div>
+      <div class="grid2">
+        <div class="field"><label>Date of Previous Visit</label><input type="date" id="f-prevdate"></div>
+        <div class="field">
+          <label>Previous Recommendations Status</label>
+          <div class="checkrow" id="f-prevstatus">
+            <label class="chip-check"><input type="radio" name="prevstatus" value="Completed">Completed</label>
+            <label class="chip-check"><input type="radio" name="prevstatus" value="Partially Completed">Partially Completed</label>
+            <label class="chip-check"><input type="radio" name="prevstatus" value="Not Completed">Not Completed</label>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Comments</label><textarea id="f-prevcomments" placeholder="e.g. Improved ventilation and water quality."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">3</div><h2>Production Performance</h2></div>
+      <div class="tbl-scroll">
+        <table class="prod">
+          <thead><tr><th>Parameter</th><th>Current</th><th>Target / Standard</th><th>Status (G/Y/R)</th><th>Comments</th></tr></thead>
+          <tbody id="prod-body"></tbody>
+        </table>
+      </div>
+      <div class="legend-row">
+        <span><span class="legend-dot" style="background:var(--green-dot);"></span>Green = On Target</span>
+        <span><span class="legend-dot" style="background:var(--yellow-dot);"></span>Yellow = Monitor</span>
+        <span><span class="legend-dot" style="background:var(--red-dot);"></span>Red = Action Required</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">4</div><h2>Overall Farm Health Score (0-100)</h2></div>
+      <div class="score-wrap">
+        <div class="score-bar-outer">
+          <div class="score-track"><div class="score-marker" id="score-marker" style="left:78%"></div></div>
+          <div class="score-scale"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+          <input type="range" class="score-range" id="f-score" min="0" max="100" value="78">
+        </div>
+        <div class="score-badge"><div class="num" id="score-num">78/100</div><div class="lbl" id="score-lbl" style="color:#1c7a3d;">Good</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">5</div><h2>Farm Assessment Checklist</h2></div>
+      <div class="chk-col-labels"><span>Check Items</span><span>Yes</span><span>No</span><span>N/A</span><span>Comments</span></div>
+      <div id="checklist-root"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">6</div><h2>Observations</h2></div>
+      <textarea id="f-observations" style="min-height:100px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;" placeholder="Birds are active with good feed intake. Maintain biosecurity and monitor respiratory signs."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">7</div><h2>Photo Documentation &amp; Findings</h2></div>
+      <div class="photo-grid" id="photo-grid">
+        <label class="photo-add">
+          <span style="font-size:22px;">+</span>Add Photo
+          <input type="file" id="photo-input" accept="image/*" multiple>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">8</div><h2>Recommendations &amp; Action Plan</h2></div>
+      <textarea id="f-recommendations" style="min-height:70px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;" placeholder="Maintain litter quality and improve footbath solution. Continue monitoring bird weight weekly."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">9</div><h2>Priority Actions</h2></div>
+      <div class="tbl-scroll">
+        <table class="prio">
+          <thead><tr><th style="width:26%;">Action / Recommendation</th><th style="width:11%;">Priority</th><th style="width:18%;">Responsible</th><th style="width:14%;">Target Date</th><th style="width:12%;">Status</th><th></th></tr></thead>
+          <tbody id="prio-body"></tbody>
+        </table>
+      </div>
+      <div class="prio-actions"><button type="button" class="btn btn-ghost btn-sm" onclick="addPrioRow()">+ Add Row</button></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="sec-head"><div class="sec-num">10</div><h2>Follow-up</h2></div>
+        <div class="field"><label>Next Visit Date</label><input type="date" id="f-nextvisit"></div>
+        <div class="field">
+          <label>Follow-up Required</label>
+          <div class="checkrow" id="f-followtypes">
+            <label class="chip-check"><input type="checkbox" value="Urgent">Urgent</label>
+            <label class="chip-check"><input type="checkbox" value="Routine">Routine</label>
+            <label class="chip-check"><input type="checkbox" value="Monitor">Monitor</label>
+            <label class="chip-check"><input type="checkbox" value="Lab Testing">Lab Testing</label>
+          </div>
+        </div>
+        <div class="field"><label>Notes (optional)</label><textarea id="f-follownotes" placeholder="Any additional follow-up notes..."></textarea></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-head"><div class="sec-num">11</div><h2>Signatures</h2></div>
+        <div class="grid2">
+          <div class="sig-box">
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);">Consultant (CluckWise)</label>
+            <div class="sig-canvas-wrap"><canvas class="sig" id="sig-consultant" width="500" height="180"></canvas></div>
+            <div class="sig-actions">
+              <button type="button" onclick="clearSig('consultant')">Clear</button>
+              <span style="font-size:11px;color:var(--muted);">sign above</span>
+            </div>
+            <div class="field" style="margin-top:8px;"><label>Name</label><input type="text" id="f-sig-consultant-name"></div>
+            <div class="field"><label>Date</label><input type="date" id="f-sig-consultant-date"></div>
+          </div>
+          <div class="sig-box">
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);">Farm Owner / Manager</label>
+            <div class="sig-canvas-wrap"><canvas class="sig" id="sig-owner" width="500" height="180"></canvas></div>
+            <div class="sig-actions">
+              <button type="button" onclick="clearSig('owner')">Clear</button>
+              <span style="font-size:11px;color:var(--muted);">sign above</span>
+            </div>
+            <div class="field" style="margin-top:8px;"><label>Name</label><input type="text" id="f-sig-owner-name"></div>
+            <div class="field"><label>Date</label><input type="date" id="f-sig-owner-date"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="view-history" class="hidden">
+    <div class="card">
+      <div class="sec-head"><div class="sec-num">🕘</div><h2>Report History</h2></div>
+      <div class="hist-toolbar">
+        <input type="text" id="hist-search" placeholder="Search by farm name or report no...">
+      </div>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <div id="view-detail" class="hidden">
+    <button class="btn btn-ghost print-hide" style="margin-bottom:12px;" onclick="showView('history')">Back to History</button>
+    <div id="detail-content"></div>
+  </div>
+
+</div>
+
+<div class="actionbar" id="actionbar">
+  <button class="btn btn-ghost" onclick="newReport()">+ New Report</button>
+  <button class="btn btn-ghost" onclick="saveReport('draft')">Save Draft</button>
+  <button class="btn btn-primary" onclick="saveReport('completed')">Submit Report</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CHECKLIST_TEMPLATE = [
+  {key:'biosecurity', label:'Biosecurity', icon:'🛡️', items:[
+    'Farm perimeter security','Visitors logbook maintained','Footbath condition',
+    'Vehicle disinfection','Pest & rodent control','Dead bird disposal'
+  ]},
+  {key:'birdhealth', label:'Bird Health', icon:'🐔', items:[
+    'Bird activity / behavior','Respiratory signs','Digestive signs','Leg condition / lameness','Feather condition','Overall bird condition'
+  ]},
+  {key:'housing', label:'Housing & Environment', icon:'🏠', items:[
+    'House cleanliness','Litter condition','Ventilation / Air flow','Temperature control','Lighting program','Ammonia level'
+  ]},
+  {key:'feedwater', label:'Feed & Water', icon:'💧', items:[
+    'Feed quality','Feed storage condition','Feeding system','Water quality','Water system (pressure/flow)','Water cleanliness'
+  ]},
+  {key:'management', label:'Management', icon:'📋', items:[
+    'Vaccination program','Medication / Treatment','Record keeping','Culling / Sorting','Labor / Personnel','Other management'
+  ]}
+];
+const CAT_META = {
+  biosecurity:{label:'Biosecurity', icon:'🛡️'},
+  birdhealth:{label:'Bird Health', icon:'🐔'},
+  housing:{label:'Housing & Environment', icon:'🏠'},
+  feedwater:{label:'Feed & Water', icon:'💧'},
+  management:{label:'Management', icon:'📋'}
+};
+const PRODUCTION_ROWS = [
+  'Mortality (%)','Feed Intake (g/bird/day)','Body Weight (g)','Uniformity (%)',
+  'Egg Production (%)','FCR','Water Intake (ml/bird/day)','Other Remarks'
+];
+
+let state = null;
+let photos = [];
+let sigData = {consultant:'', owner:''};
+let historyIndex = [];
+let currentDetailReport = null;
+
+function uid(){ return 'r' + Date.now() + Math.random().toString(36).slice(2,8); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ if(!d) return '-'; const parts=d.split('-'); const y=parts[0],m=parts[1],day=parts[2]; return day&&m&&y? (day+'/'+m+'/'+y):d; }
+
+function blankReport(){
+  return {
+    id: uid(),
+    reportNo: '',
+    date: todayStr(),
+    farm:'', owner:'', location:'', contact:'',
+    optype:[],
+    house:'', flock:'', birdage:'', breed:'', birdcount:'',
+    prev:{date:'', status:'', comments:''},
+    production: PRODUCTION_ROWS.map(function(p){ return {parameter:p, current:'', target:'', status:'On Target', comments:''}; }),
+    score:78,
+    checklist: CHECKLIST_TEMPLATE.map(function(cat){ return {key:cat.key, items:cat.items.map(function(name){ return {name:name,answer:'',comment:''}; })}; }),
+    observations:'',
+    photos:[],
+    recommendations:'',
+    priorityActions: Array.from({length:5}, function(){ return {action:'', priority:'Medium', responsible:'', targetDate:'', status:'Open'}; }),
+    followup:{next:'', types:[], notes:''},
+    signatures:{consultant:{dataUrl:'',name:'',date:todayStr()}, owner:{dataUrl:'',name:'',date:todayStr()}},
+    status:'draft',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+}
+
+function renderProduction(rows){
+  const body = document.getElementById('prod-body');
+  body.innerHTML = '';
+  rows.forEach(function(row, i){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>'+row.parameter+'</td>'+
+      '<td><input type="text" data-i="'+i+'" data-f="current" value="'+escAttr(row.current)+'"></td>'+
+      '<td><input type="text" data-i="'+i+'" data-f="target" value="'+escAttr(row.target)+'"></td>'+
+      '<td><select data-i="'+i+'" data-f="status">'+
+        '<option '+(row.status==='On Target'?'selected':'')+'>On Target</option>'+
+        '<option '+(row.status==='Monitor'?'selected':'')+'>Monitor</option>'+
+        '<option '+(row.status==='Action Required'?'selected':'')+'>Action Required</option>'+
+      '</select></td>'+
+      '<td><input type="text" data-i="'+i+'" data-f="comments" value="'+escAttr(row.comments)+'"></td>';
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('input,select').forEach(function(el){
+    el.addEventListener('input', function(){
+      const i = +el.dataset.i, f = el.dataset.f;
+      state.production[i][f] = el.value;
+    });
+  });
+}
+
+function renderChecklist(cats){
+  const root = document.getElementById('checklist-root');
+  root.innerHTML = '';
+  cats.forEach(function(cat){
+    const m = CAT_META[cat.key] || {label:cat.key, icon:'-'};
+    const wrap = document.createElement('div');
+    wrap.className='checklist-cat';
+    wrap.innerHTML = '<div class="cat-head"><div class="cat-icon">'+m.icon+'</div><h3>'+m.label+'</h3></div>';
+    cat.items.forEach(function(it, idx){
+      const row = document.createElement('div');
+      row.className='chk-item';
+      row.innerHTML =
+        '<div class="item-name">'+it.name+'</div>'+
+        '<label class="yn yes"><input type="radio" name="'+cat.key+'-'+idx+'" value="Yes" '+(it.answer==='Yes'?'checked':'')+'></label>'+
+        '<label class="yn no"><input type="radio" name="'+cat.key+'-'+idx+'" value="No" '+(it.answer==='No'?'checked':'')+'></label>'+
+        '<label class="yn na"><input type="radio" name="'+cat.key+'-'+idx+'" value="N/A" '+(it.answer==='N/A'?'checked':'')+'></label>'+
+        '<input type="text" placeholder="Comments" value="'+escAttr(it.comment)+'">';
+      row.querySelectorAll('input[type=radio]').forEach(function(r){
+        r.addEventListener('change', function(){ it.answer = r.value; });
+      });
+      row.querySelector('input[type=text]').addEventListener('input', function(e){ it.comment = e.target.value; });
+      wrap.appendChild(row);
+    });
+    root.appendChild(wrap);
+  });
+}
+
+function scoreLabel(v){
+  if(v>=80) return {t:'Excellent', c:'#1c7a3d'};
+  if(v>=60) return {t:'Good', c:'#3d8a4e'};
+  if(v>=40) return {t:'Fair', c:'#a1670f'};
+  return {t:'Poor', c:'#a3341f'};
+}
+function updateScoreUI(v){
+  document.getElementById('score-marker').style.left = v+'%';
+  document.getElementById('score-num').textContent = v+'/100';
+  const L = scoreLabel(v);
+  const lbl = document.getElementById('score-lbl');
+  lbl.textContent = L.t; lbl.style.color = L.c;
+}
+
+function renderPhotos(){
+  const grid = document.getElementById('photo-grid');
+  grid.querySelectorAll('.photo-card').forEach(function(n){ n.remove(); });
+  photos.forEach(function(p, idx){
+    const div = document.createElement('div');
+    div.className='photo-card';
+    div.innerHTML =
+      '<div class="photo-card-head"><span class="photo-num">'+(idx+1)+'</span><button type="button" class="del" onclick="removePhoto(\''+p.id+'\')">x</button></div>'+
+      '<img src="'+p.dataUrl+'">'+
+      '<div class="photo-fields">'+
+        '<label>Finding</label><textarea data-id="'+p.id+'" data-f="finding" placeholder="What did you observe?">'+escHtml(p.finding||'')+'</textarea>'+
+        '<label>Interpretation</label><textarea data-id="'+p.id+'" data-f="interpretation" placeholder="What does it mean?">'+escHtml(p.interpretation||'')+'</textarea>'+
+        '<label>Recommendation</label><textarea data-id="'+p.id+'" data-f="recommendation" placeholder="What should be done?">'+escHtml(p.recommendation||'')+'</textarea>'+
+      '</div>';
+    grid.insertBefore(div, grid.firstChild);
+  });
+  grid.querySelectorAll('.photo-fields textarea').forEach(function(ta){
+    ta.addEventListener('input', function(e){
+      const ph = photos.find(function(x){ return x.id===e.target.dataset.id; });
+      if(ph) ph[e.target.dataset.f] = e.target.value;
+    });
+  });
+}
+function removePhoto(id){ photos = photos.filter(function(p){ return p.id!==id; }); renderPhotos(); }
+
+function compressImage(file){
+  return new Promise(function(resolve,reject){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const maxW = 900;
+        const scale = Math.min(1, maxW/img.width);
+        const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
+        const canvas = document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('photo-input').addEventListener('change', async function(e){
+  const files = Array.from(e.target.files || []);
+  for(const f of files){
+    try{
+      const dataUrl = await compressImage(f);
+      photos.push({id: uid(), dataUrl:dataUrl, finding:'', interpretation:'', recommendation:''});
+    }catch(err){ console.error('photo error', err); }
+  }
+  renderPhotos();
+  e.target.value = '';
+});
+
+function renderPrioActions(rows){
+  const body = document.getElementById('prio-body');
+  body.innerHTML = '';
+  rows.forEach(function(row,i){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input type="text" data-i="'+i+'" data-f="action" value="'+escAttr(row.action)+'" placeholder="Action / recommendation"></td>'+
+      '<td><select data-i="'+i+'" data-f="priority">'+
+        '<option '+(row.priority==='High'?'selected':'')+'>High</option>'+
+        '<option '+(row.priority==='Medium'?'selected':'')+'>Medium</option>'+
+        '<option '+(row.priority==='Low'?'selected':'')+'>Low</option>'+
+      '</select></td>'+
+      '<td><input type="text" data-i="'+i+'" data-f="responsible" value="'+escAttr(row.responsible)+'" placeholder="Name"></td>'+
+      '<td><input type="date" data-i="'+i+'" data-f="targetDate" value="'+escAttr(row.targetDate)+'"></td>'+
+      '<td><button type="button" class="status-toggle '+(row.status==='Done'?'done':'open')+'" onclick="togglePrioStatus('+i+')">'+row.status+'</button></td>'+
+      '<td><button type="button" class="row-del" onclick="removePrioRow('+i+')">x</button></td>';
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('input,select').forEach(function(el){
+    el.addEventListener('input', function(){
+      const i = +el.dataset.i, f = el.dataset.f;
+      state.priorityActions[i][f] = el.value;
+    });
+  });
+}
+function togglePrioStatus(i){
+  state.priorityActions[i].status = state.priorityActions[i].status==='Done' ? 'Open' : 'Done';
+  renderPrioActions(state.priorityActions);
+}
+function addPrioRow(){
+  state.priorityActions.push({action:'', priority:'Medium', responsible:'', targetDate:'', status:'Open'});
+  renderPrioActions(state.priorityActions);
+}
+function removePrioRow(i){
+  state.priorityActions.splice(i,1);
+  renderPrioActions(state.priorityActions);
+}
+
+function setupSig(canvasId, key){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  function fitCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = rect.width*ratio; canvas.height = rect.height*ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.strokeStyle='#182420';
+  }
+  fitCanvas();
+  let drawing=false, last=null;
+  function pos(e){
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+    return {x:x,y:y};
+  }
+  function start(e){ drawing=true; last=pos(e); e.preventDefault(); }
+  function move(e){
+    if(!drawing) return;
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    last = p; e.preventDefault();
+  }
+  function end(){ if(!drawing) return; drawing=false; sigData[key] = canvas.toDataURL('image/png'); }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', end);
+}
+function clearSig(key){
+  const canvas = document.getElementById(key==='consultant'?'sig-consultant':'sig-owner');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  sigData[key] = '';
+}
+function loadSigImage(key, dataUrl){
+  if(!dataUrl) return;
+  const canvas = document.getElementById(key==='consultant'?'sig-consultant':'sig-owner');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = function(){
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0, rect.width, rect.height);
+  };
+  img.src = dataUrl;
+  sigData[key] = dataUrl;
+}
+
+function loadReportIntoForm(r){
+  state = r;
+  photos = (r.photos||[]).slice();
+  sigData = {consultant:(r.signatures && r.signatures.consultant && r.signatures.consultant.dataUrl)||'', owner:(r.signatures && r.signatures.owner && r.signatures.owner.dataUrl)||''};
+
+  document.getElementById('f-reportNo').value = r.reportNo||'';
+  document.getElementById('f-date').value = r.date||'';
+  document.getElementById('f-farm').value = r.farm||'';
+  document.getElementById('f-owner').value = r.owner||'';
+  document.getElementById('f-location').value = r.location||'';
+  document.getElementById('f-contact').value = r.contact||'';
+  document.querySelectorAll('#f-optype input').forEach(function(cb){ cb.checked = (r.optype||[]).indexOf(cb.value) !== -1; });
+  document.getElementById('f-house').value = r.house||'';
+  document.getElementById('f-flock').value = r.flock||'';
+  document.getElementById('f-birdage').value = r.birdage||'';
+  document.getElementById('f-breed').value = r.breed||'';
+  document.getElementById('f-birdcount').value = r.birdcount||'';
+
+  document.getElementById('f-prevdate').value = (r.prev && r.prev.date)||'';
+  document.querySelectorAll('input[name=prevstatus]').forEach(function(rb){ rb.checked = rb.value===(r.prev && r.prev.status); });
+  document.getElementById('f-prevcomments').value = (r.prev && r.prev.comments)||'';
+
+  renderProduction(r.production);
+  updateScoreUI(r.score || 78);
+  document.getElementById('f-score').value = r.score || 78;
+  renderChecklist(r.checklist);
+  document.getElementById('f-observations').value = r.observations||'';
+  renderPhotos();
+  document.getElementById('f-recommendations').value = r.recommendations||'';
+  renderPrioActions(r.priorityActions||[]);
+
+  document.getElementById('f-nextvisit').value = (r.followup && r.followup.next)||'';
+  document.querySelectorAll('#f-followtypes input').forEach(function(cb){ cb.checked = ((r.followup && r.followup.types)||[]).indexOf(cb.value) !== -1; });
+  document.getElementById('f-follownotes').value = (r.followup && r.followup.notes)||'';
+
+  document.getElementById('f-sig-consultant-name').value = (r.signatures && r.signatures.consultant && r.signatures.consultant.name)||'';
+  document.getElementById('f-sig-consultant-date').value = (r.signatures && r.signatures.consultant && r.signatures.consultant.date)||todayStr();
+  document.getElementById('f-sig-owner-name').value = (r.signatures && r.signatures.owner && r.signatures.owner.name)||'';
+  document.getElementById('f-sig-owner-date').value = (r.signatures && r.signatures.owner && r.signatures.owner.date)||todayStr();
+  clearSig('consultant'); clearSig('owner');
+  loadSigImage('consultant', sigData.consultant);
+  loadSigImage('owner', sigData.owner);
+}
+
+function collectFormIntoState(){
+  state.reportNo = document.getElementById('f-reportNo').value.trim();
+  state.date = document.getElementById('f-date').value;
+  state.farm = document.getElementById('f-farm').value.trim();
+  state.owner = document.getElementById('f-owner').value.trim();
+  state.location = document.getElementById('f-location').value.trim();
+  state.contact = document.getElementById('f-contact').value.trim();
+  state.optype = Array.from(document.querySelectorAll('#f-optype input:checked')).map(function(c){ return c.value; });
+  state.house = document.getElementById('f-house').value.trim();
+  state.flock = document.getElementById('f-flock').value.trim();
+  state.birdage = document.getElementById('f-birdage').value;
+  state.breed = document.getElementById('f-breed').value.trim();
+  state.birdcount = document.getElementById('f-birdcount').value;
+
+  state.prev = {
+    date: document.getElementById('f-prevdate').value,
+    status: (document.querySelector('input[name=prevstatus]:checked')||{}).value || '',
+    comments: document.getElementById('f-prevcomments').value.trim()
+  };
+  state.score = +document.getElementById('f-score').value;
+  state.observations = document.getElementById('f-observations').value.trim();
+  state.photos = photos;
+  state.recommendations = document.getElementById('f-recommendations').value.trim();
+
+  state.followup = {
+    next: document.getElementById('f-nextvisit').value,
+    types: Array.from(document.querySelectorAll('#f-followtypes input:checked')).map(function(c){ return c.value; }),
+    notes: document.getElementById('f-follownotes').value.trim()
+  };
+  state.signatures = {
+    consultant:{ dataUrl: sigData.consultant, name: document.getElementById('f-sig-consultant-name').value.trim(), date: document.getElementById('f-sig-consultant-date').value },
+    owner:{ dataUrl: sigData.owner, name: document.getElementById('f-sig-owner-name').value.trim(), date: document.getElementById('f-sig-owner-date').value }
+  };
+  state.updatedAt = Date.now();
+}
+
+document.getElementById('f-score').addEventListener('input', function(e){ updateScoreUI(+e.target.value); });
+
+async function loadIndex(){
+  try{
+    const res = await window.storage.get('report-index', false);
+    historyIndex = res && res.value ? JSON.parse(res.value) : [];
+  }catch(err){ historyIndex = []; }
+  return historyIndex;
+}
+async function saveIndex(idx){
+  historyIndex = idx;
+  await window.storage.set('report-index', JSON.stringify(idx), false);
+}
+async function nextReportNo(){
+  await loadIndex();
+  const year = new Date().getFullYear();
+  const n = historyIndex.length + 1;
+  return 'FVR-'+year+'-'+String(n).padStart(4,'0');
+}
+
+async function saveReport(status){
+  collectFormIntoState();
+  if(!state.farm){ toast('Please enter the Farm / Company name before saving.'); return; }
+  if(!state.reportNo){ state.reportNo = await nextReportNo(); document.getElementById('f-reportNo').value = state.reportNo; }
+  state.status = status;
+  state.updatedAt = Date.now();
+
+  try{
+    await window.storage.set('report:'+state.id, JSON.stringify(state), false);
+    let idx = await loadIndex();
+    idx = idx.filter(function(e){ return e.id!==state.id; });
+    idx.unshift({id:state.id, reportNo:state.reportNo, farm:state.farm, date:state.date, status:state.status, updatedAt:state.updatedAt});
+    idx.sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+    if(idx.length>50){
+      const removed = idx.slice(50);
+      idx = idx.slice(0,50);
+      for(const r of removed){ try{ await window.storage.delete('report:'+r.id, false); }catch(e){} }
+    }
+    await saveIndex(idx);
+    if(status==='completed'){
+      toast('Report submitted - opening in History');
+      await openReport(state.id);
+    } else {
+      toast('Draft saved');
+    }
+  }catch(err){
+    console.error(err);
+    toast('Could not save - please try again.');
+  }
+}
+
+function newReport(){
+  state = blankReport();
+  loadReportIntoForm(state);
+  nextReportNo().then(function(no){ document.getElementById('f-reportNo').value = no; });
+  showView('form');
+}
+
+async function renderHistoryList(filter){
+  const idx = await loadIndex();
+  const list = document.getElementById('hist-list');
+  const f = (filter||'').toLowerCase().trim();
+  const rows = idx.filter(function(e){ return !f || e.farm.toLowerCase().indexOf(f)!==-1 || e.reportNo.toLowerCase().indexOf(f)!==-1; });
+  if(rows.length===0){
+    list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>No reports found.<br>Start a new report to see it here.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  rows.forEach(function(e){
+    const row = document.createElement('div');
+    row.className='hist-row';
+    row.onclick = function(){ openReport(e.id); };
+    row.innerHTML =
+      '<div class="main"><div class="rno">'+e.reportNo+'</div><div class="sub">'+e.farm+' - '+fmtDate(e.date)+'</div></div>'+
+      '<span class="badge '+(e.status==='completed'?'badge-completed':'badge-draft')+'">'+(e.status==='completed'?'Completed':'Draft')+'</span>';
+    list.appendChild(row);
+  });
+}
+document.getElementById('hist-search').addEventListener('input', function(e){ renderHistoryList(e.target.value); });
+
+async function openReport(id){
+  try{
+    const res = await window.storage.get('report:'+id, false);
+    if(!res){ toast('Report not found.'); return; }
+    const r = JSON.parse(res.value);
+    renderDetail(r);
+    showView('detail');
+  }catch(err){ toast('Could not open report.'); }
+}
+
+function renderDetail(r){
+  currentDetailReport = r;
+  const c = document.getElementById('detail-content');
+  const checklistHtml = r.checklist.map(function(cat){
+    const meta = CAT_META[cat.key] || {label:cat.key,icon:'-'};
+    const rows = cat.items.map(function(it){
+      const commentPart = it.comment? (' - <span style="color:var(--muted)">'+escHtml(it.comment)+'</span>') : '';
+      const color = it.answer==='Yes'?'#1c7a3d':(it.answer==='No'?'#a3341f':'#8a8f8c');
+      return '<div class="chk-item" style="grid-template-columns:1fr auto;"><div class="item-name">'+it.name+commentPart+'</div><div style="font-weight:700;color:'+color+'">'+(it.answer||'-')+'</div></div>';
+    }).join('');
+    return '<div class="checklist-cat"><div class="cat-head"><div class="cat-icon">'+meta.icon+'</div><h3>'+meta.label+'</h3></div>'+rows+'</div>';
+  }).join('');
+
+  const prodRows = r.production.map(function(p){
+    return '<tr><td>'+p.parameter+'</td><td>'+(p.current||'-')+'</td><td>'+(p.target||'-')+'</td><td>'+p.status+'</td><td>'+(p.comments||'')+'</td></tr>';
+  }).join('');
+
+  const photosHtml = (r.photos||[]).map(function(p,idx){
+    return '<div class="photo-card"><div class="photo-card-head"><span class="photo-num">'+(idx+1)+'</span></div>'+
+      '<img src="'+p.dataUrl+'">'+
+      '<div class="photo-fields" style="font-size:12px;">'+
+      '<div><b>Finding:</b> '+(escHtml(p.finding)||'-')+'</div>'+
+      '<div><b>Interpretation:</b> '+(escHtml(p.interpretation)||'-')+'</div>'+
+      '<div><b>Recommendation:</b> '+(escHtml(p.recommendation)||'-')+'</div>'+
+      '</div></div>';
+  }).join('') || '<div style="color:var(--muted);font-size:13px;">No photos attached.</div>';
+
+  const prioRows = (r.priorityActions||[]).filter(function(a){ return a.action||a.responsible; }).map(function(a){
+    return '<tr><td>'+(escHtml(a.action)||'-')+'</td><td>'+a.priority+'</td><td>'+(escHtml(a.responsible)||'-')+'</td><td>'+fmtDate(a.targetDate)+'</td><td><span class="badge '+(a.status==='Done'?'badge-completed':'badge-draft')+'">'+a.status+'</span></td></tr>';
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted);">No priority actions recorded.</td></tr>';
+
+  const cs = r.signatures && r.signatures.consultant || {};
+  const os = r.signatures && r.signatures.owner || {};
+
+  c.innerHTML =
+    '<div class="card readonly-view">'+
+      '<div class="sec-head"><div class="sec-num">1</div><h2>'+r.reportNo+' - '+escHtml(r.farm)+'</h2></div>'+
+      '<div class="grid3" style="font-size:13px;">'+
+        '<div><b>Date:</b> '+fmtDate(r.date)+'</div>'+
+        '<div><b>Owner/Manager:</b> '+(escHtml(r.owner)||'-')+'</div>'+
+        '<div><b>Location:</b> '+(escHtml(r.location)||'-')+'</div>'+
+        '<div><b>Contact:</b> '+(escHtml(r.contact)||'-')+'</div>'+
+        '<div><b>Type:</b> '+((r.optype||[]).join(', ')||'-')+'</div>'+
+        '<div><b>House/Area:</b> '+(escHtml(r.house)||'-')+'</div>'+
+        '<div><b>Flock/Batch:</b> '+(escHtml(r.flock)||'-')+'</div>'+
+        '<div><b>Bird Age (wks):</b> '+(r.birdage||'-')+'</div>'+
+        '<div><b>Breed:</b> '+(escHtml(r.breed)||'-')+'</div>'+
+        '<div><b>Bird Count:</b> '+(r.birdcount||'-')+'</div>'+
+        '<div><b>Status:</b> <span class="badge '+(r.status==='completed'?'badge-completed':'badge-draft')+'">'+(r.status==='completed'?'Completed':'Draft')+'</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">2</div><h2>Previous Visit Follow-up</h2></div>'+
+      '<div style="font-size:13px;"><b>Date:</b> '+fmtDate(r.prev && r.prev.date)+' &nbsp; <b>Status:</b> '+((r.prev && r.prev.status)||'-')+'<br><b>Comments:</b> '+(escHtml(r.prev && r.prev.comments)||'-')+'</div>'+
+    '</div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">3</div><h2>Production Performance</h2></div>'+
+      '<div class="tbl-scroll"><table class="prod"><thead><tr><th>Parameter</th><th>Current</th><th>Target/Standard</th><th>Status</th><th>Comments</th></tr></thead><tbody>'+prodRows+'</tbody></table></div>'+
+    '</div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">4</div><h2>Overall Farm Health Score</h2></div>'+
+      '<div class="score-wrap"><div class="score-bar-outer"><div class="score-track"><div class="score-marker" style="left:'+r.score+'%"></div></div></div>'+
+      '<div class="score-badge"><div class="num">'+r.score+'/100</div><div class="lbl" style="color:'+scoreLabel(r.score).c+'">'+scoreLabel(r.score).t+'</div></div></div>'+
+    '</div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">5</div><h2>Farm Assessment Checklist</h2></div>'+checklistHtml+'</div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">6</div><h2>Observations</h2></div><div style="font-size:13px;">'+(escHtml(r.observations)||'-')+'</div></div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">7</div><h2>Photo Documentation &amp; Findings</h2></div><div class="photo-grid">'+photosHtml+'</div></div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">8</div><h2>Recommendations &amp; Action Plan</h2></div><div style="font-size:13px;">'+(escHtml(r.recommendations)||'-')+'</div></div>'+
+    '<div class="card"><div class="sec-head"><div class="sec-num">9</div><h2>Priority Actions</h2></div>'+
+      '<div class="tbl-scroll"><table class="prio"><thead><tr><th>Action / Recommendation</th><th>Priority</th><th>Responsible</th><th>Target Date</th><th>Status</th></tr></thead><tbody>'+prioRows+'</tbody></table></div>'+
+    '</div>'+
+    '<div class="grid2">'+
+      '<div class="card"><div class="sec-head"><div class="sec-num">10</div><h2>Follow-up</h2></div>'+
+        '<div style="font-size:13px;"><b>Next Visit:</b> '+fmtDate(r.followup && r.followup.next)+'<br><b>Required:</b> '+(((r.followup && r.followup.types)||[]).join(', ')||'-')+'<br><b>Notes:</b> '+(escHtml(r.followup && r.followup.notes)||'-')+'</div>'+
+      '</div>'+
+      '<div class="card"><div class="sec-head"><div class="sec-num">11</div><h2>Signatures</h2></div>'+
+        '<div class="grid2">'+
+          '<div><div style="font-size:11.5px;font-weight:700;color:var(--muted);">Consultant</div>'+(cs.dataUrl?('<img src="'+cs.dataUrl+'" style="height:70px;">'):'<div style="color:var(--muted);font-size:12px;">No signature</div>')+'<div style="font-size:12px;">'+(escHtml(cs.name)||'')+' - '+fmtDate(cs.date)+'</div></div>'+
+          '<div><div style="font-size:11.5px;font-weight:700;color:var(--muted);">Farm Owner/Manager</div>'+(os.dataUrl?('<img src="'+os.dataUrl+'" style="height:70px;">'):'<div style="color:var(--muted);font-size:12px;">No signature</div>')+'<div style="font-size:12px;">'+(escHtml(os.name)||'')+' - '+fmtDate(os.date)+'</div></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="print-hide" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">'+
+      '<button class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>'+
+      '<button class="btn btn-ghost" onclick="window.print()">Print</button>'+
+      '<button class="btn btn-ghost" onclick="editFromDetail(\''+r.id+'\')">Edit</button>'+
+      '<button class="btn btn-danger" onclick="deleteReport(\''+r.id+'\')">Delete</button>'+
+    '</div>';
+}
+
+async function editFromDetail(id){
+  const res = await window.storage.get('report:'+id, false);
+  if(!res) return;
+  loadReportIntoForm(JSON.parse(res.value));
+  showView('form');
+}
+async function deleteReport(id){
+  try{
+    await window.storage.delete('report:'+id, false);
+    let idx = await loadIndex();
+    idx = idx.filter(function(e){ return e.id!==id; });
+    await saveIndex(idx);
+    toast('Report deleted');
+    showView('history');
+  }catch(err){ toast('Could not delete report.'); }
+}
+
+async function downloadPDF(){
+  if(!currentDetailReport) return;
+  const el = document.getElementById('detail-content');
+  toast('Preparing PDF...');
+  try{
+    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const jsPDF = window.jspdf.jsPDF;
+    const pdf = new jsPDF('p','mm','a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    pdf.addImage(imgData,'JPEG',0,position,imgWidth,imgHeight);
+    heightLeft -= pageHeight;
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,position,imgWidth,imgHeight);
+      heightLeft -= pageHeight;
+    }
+    pdf.save((currentDetailReport.reportNo || 'farm-visit-report')+'.pdf');
+    toast('PDF downloaded');
+  }catch(err){
+    console.error(err);
+    toast('Could not generate PDF - try Print instead.');
+  }
+}
+
+function showView(v){
+  document.getElementById('view-form').classList.toggle('hidden', v!=='form');
+  document.getElementById('view-history').classList.toggle('hidden', v!=='history');
+  document.getElementById('view-detail').classList.toggle('hidden', v!=='detail');
+  document.getElementById('tab-new').classList.toggle('active', v==='form');
+  document.getElementById('tab-hist').classList.toggle('active', v==='history' || v==='detail');
+  document.getElementById('actionbar').classList.toggle('hidden', v!=='form');
+  if(v==='history') renderHistoryList(document.getElementById('hist-search').value);
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function escAttr(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function escHtml(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let toastTimer=null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+
+(async function init(){
+  setupSig('sig-consultant','consultant');
+  setupSig('sig-owner','owner');
+  state = blankReport();
+  loadReportIntoForm(state);
+  try{
+    const no = await nextReportNo();
+    document.getElementById('f-reportNo').value = no;
+    state.reportNo = no;
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
