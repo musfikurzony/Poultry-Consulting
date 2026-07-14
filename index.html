@@ -6,6 +6,7 @@
 <title>Farm Visit Report</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --forest:#123723;
@@ -220,8 +221,16 @@
   .toast.show{opacity:1;bottom:88px;}
 
   .readonly-view .field input,.readonly-view .field textarea{background:#f4f6f4;color:var(--ink);}
+  .config-banner{
+    background:#fdf2df;color:#7a4d0f;border-bottom:1px solid #eed9ad;
+    padding:9px 16px;font-size:12.5px;text-align:center;font-weight:600;
+  }
+  .config-banner code{background:#fff;padding:1px 6px;border-radius:5px;font-size:11.5px;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;background:#e0b13a;}
+  .sync-dot.ok{background:#4caf7d;}
+  .sync-dot.err{background:#c0392b;}
   @media print{
-    .topbar,.actionbar,.hist-toolbar,.print-hide{display:none !important;}
+    .topbar,.actionbar,.hist-toolbar,.print-hide,.config-banner{display:none !important;}
     body{background:#fff;}
     .card{box-shadow:none;border:1px solid #ccc;}
   }
@@ -237,6 +246,10 @@
   </div>
   <button class="tabbtn active" id="tab-new" onclick="showView('form')">📝 New / Edit</button>
   <button class="tabbtn" id="tab-hist" onclick="showView('history')">🕘 History</button>
+  <span style="font-size:11.5px;color:#cfe0d5;display:flex;align-items:center;" id="sync-indicator"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connecting...</span></span>
+</div>
+<div class="config-banner hidden" id="config-banner">
+  ⚠️ Supabase is not configured yet. Open the file, find <code>SUPABASE_URL</code> near the top of the script, and paste in your project's URL and anon key. Data will not save until this is done.
 </div>
 
 <div class="wrap">
@@ -785,43 +798,119 @@ function collectFormIntoState(){
 
 document.getElementById('f-score').addEventListener('input', function(e){ updateScoreUI(+e.target.value); });
 
-async function loadIndex(){
+/* =========================================================================
+   SUPABASE SETUP
+   1. Go to https://supabase.com -> Start your project (sign in with GitHub
+      or email - no credit card needed for the free tier).
+   2. Create a new project, pick a region close to you, set a database
+      password (save it somewhere safe).
+   3. In the left menu: SQL Editor > New query -> paste and run this:
+
+      create table reports (
+        id text primary key,
+        report_no text,
+        farm text,
+        date text,
+        status text,
+        updated_at bigint,
+        data jsonb not null
+      );
+      create table photos (
+        id text primary key,
+        report_id text references reports(id) on delete cascade,
+        order_idx int,
+        data jsonb not null
+      );
+      alter table reports enable row level security;
+      alter table photos enable row level security;
+      create policy "allow authenticated" on reports for all
+        using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+      create policy "allow authenticated" on photos for all
+        using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+   4. Left menu: Authentication > Providers > enable "Allow anonymous sign-ins".
+   5. Left menu: Project Settings > API -> copy the "Project URL" and the
+      "anon public" key, and paste them below, replacing the placeholders.
+   ========================================================================= */
+const SUPABASE_URL = "https://lmrstsurfhlmaomwjgzg.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcnN0c3VyZmhsbWFvbXdqZ3pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMTkwNDYsImV4cCI6MjA5OTU5NTA0Nn0.klsdV9pHi-Uw9IiOxEuWeAPk4qOPIzc5eXmWKQ3GUok";
+const SUPABASE_CONFIGURED = SUPABASE_URL !== "YOUR_SUPABASE_URL";
+
+let sb = null;
+let fbReady = false;
+
+function setSync(mode, text){
+  const dot = document.getElementById('sync-dot');
+  const t = document.getElementById('sync-text');
+  dot.className = 'sync-dot' + (mode?(' '+mode):'');
+  t.textContent = text;
+}
+
+async function initBackend(){
+  if(!SUPABASE_CONFIGURED){
+    document.getElementById('config-banner').classList.remove('hidden');
+    setSync('err', 'Not configured');
+    return;
+  }
   try{
-    const res = await window.storage.get('report-index', false);
-    historyIndex = res && res.value ? JSON.parse(res.value) : [];
-  }catch(err){ historyIndex = []; }
-  return historyIndex;
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { error } = await sb.auth.signInAnonymously();
+    if(error) throw error;
+    fbReady = true;
+    setSync('ok', 'Synced');
+  }catch(err){
+    console.error('Supabase init error', err);
+    setSync('err', 'Connection failed');
+    toast('Could not connect to Supabase - check your config and internet connection.');
+  }
 }
-async function saveIndex(idx){
-  historyIndex = idx;
-  await window.storage.set('report-index', JSON.stringify(idx), false);
-}
+
 async function nextReportNo(){
-  await loadIndex();
+  if(!fbReady) return 'FVR-'+new Date().getFullYear()+'-DRAFT';
   const year = new Date().getFullYear();
-  const n = historyIndex.length + 1;
-  return 'FVR-'+year+'-'+String(n).padStart(4,'0');
+  try{
+    const { count, error } = await sb.from('reports').select('id', {count:'exact', head:true});
+    if(error) throw error;
+    const n = (count||0) + 1;
+    return 'FVR-'+year+'-'+String(n).padStart(4,'0');
+  }catch(err){
+    console.error(err);
+    return 'FVR-'+year+'-'+String(Date.now()).slice(-4);
+  }
 }
 
 async function saveReport(status){
   collectFormIntoState();
   if(!state.farm){ toast('Please enter the Farm / Company name before saving.'); return; }
+  if(!fbReady){ toast('Not connected to Supabase yet - check the setup banner at the top.'); return; }
   if(!state.reportNo){ state.reportNo = await nextReportNo(); document.getElementById('f-reportNo').value = state.reportNo; }
   state.status = status;
   state.updatedAt = Date.now();
 
   try{
-    await window.storage.set('report:'+state.id, JSON.stringify(state), false);
-    let idx = await loadIndex();
-    idx = idx.filter(function(e){ return e.id!==state.id; });
-    idx.unshift({id:state.id, reportNo:state.reportNo, farm:state.farm, date:state.date, status:state.status, updatedAt:state.updatedAt});
-    idx.sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
-    if(idx.length>50){
-      const removed = idx.slice(50);
-      idx = idx.slice(0,50);
-      for(const r of removed){ try{ await window.storage.delete('report:'+r.id, false); }catch(e){} }
+    setSync('', 'Saving...');
+    const mainData = Object.assign({}, state);
+    delete mainData.photos;
+
+    const { error: repErr } = await sb.from('reports').upsert({
+      id: state.id, report_no: state.reportNo, farm: state.farm, date: state.date,
+      status: state.status, updated_at: state.updatedAt, data: mainData
+    });
+    if(repErr) throw repErr;
+
+    const { error: delErr } = await sb.from('photos').delete().eq('report_id', state.id);
+    if(delErr) throw delErr;
+
+    if(photos.length){
+      const photoRows = photos.map(function(p, idx){
+        return { id: p.id, report_id: state.id, order_idx: idx, data: p };
+      });
+      const { error: insErr } = await sb.from('photos').insert(photoRows);
+      if(insErr) throw insErr;
     }
-    await saveIndex(idx);
+
+    setSync('ok', 'Synced');
+
     if(status==='completed'){
       toast('Report submitted - opening in History');
       await openReport(state.id);
@@ -830,6 +919,7 @@ async function saveReport(status){
     }
   }catch(err){
     console.error(err);
+    setSync('err', 'Save failed');
     toast('Could not save - please try again.');
   }
 }
@@ -842,35 +932,53 @@ function newReport(){
 }
 
 async function renderHistoryList(filter){
-  const idx = await loadIndex();
   const list = document.getElementById('hist-list');
-  const f = (filter||'').toLowerCase().trim();
-  const rows = idx.filter(function(e){ return !f || e.farm.toLowerCase().indexOf(f)!==-1 || e.reportNo.toLowerCase().indexOf(f)!==-1; });
-  if(rows.length===0){
-    list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>No reports found.<br>Start a new report to see it here.</div>';
+  if(!fbReady){
+    list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>Not connected to Supabase yet.<br>Set up your config to see report history.</div>';
     return;
   }
-  list.innerHTML = '';
-  rows.forEach(function(e){
-    const row = document.createElement('div');
-    row.className='hist-row';
-    row.onclick = function(){ openReport(e.id); };
-    row.innerHTML =
-      '<div class="main"><div class="rno">'+e.reportNo+'</div><div class="sub">'+e.farm+' - '+fmtDate(e.date)+'</div></div>'+
-      '<span class="badge '+(e.status==='completed'?'badge-completed':'badge-draft')+'">'+(e.status==='completed'?'Completed':'Draft')+'</span>';
-    list.appendChild(row);
-  });
+  list.innerHTML = '<div class="empty-state">Loading...</div>';
+  try{
+    const { data, error } = await sb.from('reports').select('id,report_no,farm,date,status,updated_at').order('updated_at',{ascending:false}).limit(50);
+    if(error) throw error;
+    let rows = data || [];
+    const f = (filter||'').toLowerCase().trim();
+    if(f){
+      rows = rows.filter(function(e){ return (e.farm||'').toLowerCase().indexOf(f)!==-1 || (e.report_no||'').toLowerCase().indexOf(f)!==-1; });
+    }
+    if(rows.length===0){
+      list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>No reports found.<br>Start a new report to see it here.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    rows.forEach(function(e){
+      const row = document.createElement('div');
+      row.className='hist-row';
+      row.onclick = function(){ openReport(e.id); };
+      row.innerHTML =
+        '<div class="main"><div class="rno">'+e.report_no+'</div><div class="sub">'+e.farm+' - '+fmtDate(e.date)+'</div></div>'+
+        '<span class="badge '+(e.status==='completed'?'badge-completed':'badge-draft')+'">'+(e.status==='completed'?'Completed':'Draft')+'</span>';
+      list.appendChild(row);
+    });
+  }catch(err){
+    console.error(err);
+    list.innerHTML = '<div class="empty-state">Could not load report history.</div>';
+  }
 }
 document.getElementById('hist-search').addEventListener('input', function(e){ renderHistoryList(e.target.value); });
 
 async function openReport(id){
+  if(!fbReady){ toast('Not connected to Supabase yet.'); return; }
   try{
-    const res = await window.storage.get('report:'+id, false);
-    if(!res){ toast('Report not found.'); return; }
-    const r = JSON.parse(res.value);
+    const { data: rep, error: repErr } = await sb.from('reports').select('data').eq('id', id).single();
+    if(repErr || !rep){ toast('Report not found.'); return; }
+    const r = rep.data;
+    const { data: photoRows, error: photoErr } = await sb.from('photos').select('data').eq('report_id', id).order('order_idx');
+    if(photoErr) throw photoErr;
+    r.photos = (photoRows||[]).map(function(pr){ return pr.data; });
     renderDetail(r);
     showView('detail');
-  }catch(err){ toast('Could not open report.'); }
+  }catch(err){ console.error(err); toast('Could not open report.'); }
 }
 
 function renderDetail(r){
@@ -961,20 +1069,23 @@ function renderDetail(r){
 }
 
 async function editFromDetail(id){
-  const res = await window.storage.get('report:'+id, false);
-  if(!res) return;
-  loadReportIntoForm(JSON.parse(res.value));
+  if(!fbReady) return;
+  const { data: rep, error: repErr } = await sb.from('reports').select('data').eq('id', id).single();
+  if(repErr || !rep) return;
+  const r = rep.data;
+  const { data: photoRows } = await sb.from('photos').select('data').eq('report_id', id).order('order_idx');
+  r.photos = (photoRows||[]).map(function(pr){ return pr.data; });
+  loadReportIntoForm(r);
   showView('form');
 }
 async function deleteReport(id){
+  if(!fbReady) return;
   try{
-    await window.storage.delete('report:'+id, false);
-    let idx = await loadIndex();
-    idx = idx.filter(function(e){ return e.id!==id; });
-    await saveIndex(idx);
+    const { error } = await sb.from('reports').delete().eq('id', id);
+    if(error) throw error;
     toast('Report deleted');
     showView('history');
-  }catch(err){ toast('Could not delete report.'); }
+  }catch(err){ console.error(err); toast('Could not delete report.'); }
 }
 
 async function downloadPDF(){
@@ -1034,11 +1145,14 @@ function toast(msg){
   setupSig('sig-owner','owner');
   state = blankReport();
   loadReportIntoForm(state);
-  try{
-    const no = await nextReportNo();
-    document.getElementById('f-reportNo').value = no;
-    state.reportNo = no;
-  }catch(e){}
+  await initBackend();
+  if(fbReady){
+    try{
+      const no = await nextReportNo();
+      document.getElementById('f-reportNo').value = no;
+      state.reportNo = no;
+    }catch(e){}
+  }
 })();
 </script>
 </body>
