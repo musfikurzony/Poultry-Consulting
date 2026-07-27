@@ -2,7 +2,8 @@
 //
 // Admin-only endpoint. Verifies the caller is signed in AND matches
 // ADMIN_EMAIL, then uses the Supabase service_role key (server-side only,
-// never sent to the browser) to invite a new user by email.
+// never sent to the browser) to create a new user with a password the
+// admin sets directly - no invite email involved.
 //
 // Required Netlify environment variables (Site settings > Environment variables):
 //   SUPABASE_URL              - same URL used in the app
@@ -42,7 +43,7 @@ exports.handler = async function (event) {
     return { statusCode: 401, body: JSON.stringify({ error: 'Invalid session.' }) };
   }
   if ((callerData.user.email || '').toLowerCase() !== ADMIN_EMAIL) {
-    return { statusCode: 403, body: JSON.stringify({ error: 'Only the admin can invite team members.' }) };
+    return { statusCode: 403, body: JSON.stringify({ error: 'Only the admin can add team members.' }) };
   }
 
   let body;
@@ -53,12 +54,19 @@ exports.handler = async function (event) {
   }
   const email = (body.email || '').trim();
   const name = (body.name || '').trim();
+  const password = (body.password || '').trim();
   if (!email) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Email is required.' }) };
   }
+  if (!password || password.length < 6) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Password must be at least 6 characters.' }) };
+  }
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { name: name }
+  const { data, error } = await admin.auth.admin.createUser({
+    email: email,
+    password: password,
+    email_confirm: true,
+    user_metadata: { name: name }
   });
 
   if (error) {
@@ -67,3 +75,4 @@ exports.handler = async function (event) {
 
   return { statusCode: 200, body: JSON.stringify({ ok: true, user: data.user }) };
 };
+
