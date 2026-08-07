@@ -4,6 +4,13 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>CluckWise Field</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#123723">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CluckWise">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -26,8 +33,31 @@
     --red-dot:#c0392b;
     --radius:12px;
     --shadow:0 1px 2px rgba(18,55,35,.06), 0 6px 20px rgba(18,55,35,.05);
+    --input-bg:#fbfcfb;
+    --surface:#ffffff;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
+  html[data-theme="dark"]{
+    --forest:#0c2115;
+    --brand:#2c8659;
+    --brand-dark:#227048;
+    --brand-light:#183226;
+    --bg:#121815;
+    --card:#1b2420;
+    --ink:#e6ede8;
+    --muted:#8ea198;
+    --line:#2c3833;
+    --amber:#d9a24d;
+    --red:#d16752;
+    --gold:#d8b463;
+    --green-dot:#3fae70;
+    --yellow-dot:#e0b13a;
+    --red-dot:#d16752;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --input-bg:#232d27;
+    --surface:#1e2823;
+  }
+  html,body,.card,input,select,textarea{transition:background-color .2s, color .2s, border-color .2s;}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
   body{-webkit-font-smoothing:antialiased;}
@@ -61,7 +91,7 @@
     display:flex;align-items:center;gap:6px;
     transition:background .15s;
   }
-  .tabbtn.active{background:#fff;color:var(--brand-dark);border-color:#fff;}
+  .tabbtn.active{background:var(--surface);color:var(--brand-dark);border-color:var(--surface);}
   .tabbtn:hover:not(.active){background:rgba(255,255,255,.16);}
 
   .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 90px;}
@@ -84,10 +114,10 @@
   .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
   .field label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .field input[type=text],.field input[type=date],.field input[type=number],.field input[type=tel],.field select,.field textarea{
-    border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;color:var(--ink);width:100%;
+    border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--input-bg);color:var(--ink);width:100%;
   }
   .field textarea{resize:vertical;min-height:56px;}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand);outline-offset:1px;background:#fff;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand);outline-offset:1px;background:var(--surface);}
   .checkrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:2px;}
   .chip-check{display:flex;align-items:center;gap:6px;font-size:13px;}
   .chip-check input{width:16px;height:16px;accent-color:var(--brand);}
@@ -100,7 +130,7 @@
     padding:7px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);
   }
   table.prod td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
-  table.prod input, table.prod select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:#fbfcfb;}
+  table.prod input, table.prod select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:var(--input-bg);}
   .tbl-scroll{overflow-x:auto;}
   .legend-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted);align-items:center;}
   .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
@@ -123,7 +153,7 @@
   .yn.yes input{accent-color:#1c7a3d;}
   .yn.no input{accent-color:#a3341f;}
   .yn.na input{accent-color:#8a8f8c;}
-  .chk-item input[type=text]{border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12.5px;width:100%;background:#fbfcfb;}
+  .chk-item input[type=text]{border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12.5px;width:100%;background:var(--input-bg);}
   .chk-col-labels{display:grid;grid-template-columns:1fr auto auto auto 1.2fr;gap:8px;padding:0 4px 6px;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .chk-col-labels span{text-align:center;}
   .chk-col-labels span:first-child,.chk-col-labels span:last-child{text-align:left;}
@@ -149,14 +179,14 @@
   .score-badge .lbl{font-size:11.5px;font-weight:700;margin-top:2px;}
 
   .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
-  .photo-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fbfcfb;display:flex;flex-direction:column;}
+  .photo-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--input-bg);display:flex;flex-direction:column;}
   .photo-card-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--brand-light);}
   .photo-num{width:20px;height:20px;border-radius:6px;background:var(--brand-dark);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
   .photo-card img{width:100%;height:130px;object-fit:cover;display:block;background:#eef1ee;}
   .photo-card .del{background:rgba(20,20,20,.55);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:1;}
   .photo-fields{padding:8px 9px 10px;display:flex;flex-direction:column;gap:6px;}
   .photo-fields label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
-  .photo-fields textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12px;resize:vertical;min-height:34px;background:#fff;}
+  .photo-fields textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:12px;resize:vertical;min-height:34px;background:var(--surface);}
   .photo-add{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
     border:2px dashed #c8d6cc;border-radius:10px;min-height:150px;color:var(--brand-dark);font-size:12px;font-weight:600;
@@ -167,14 +197,14 @@
   table.prio{width:100%;border-collapse:collapse;font-size:12.5px;}
   table.prio th{text-align:left;background:var(--brand-light);color:var(--brand-dark);padding:7px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);}
   table.prio td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
-  table.prio input,table.prio select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:#fbfcfb;}
+  table.prio input,table.prio select{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12.5px;background:var(--input-bg);}
   .status-toggle{border:none;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;width:100%;}
   .status-toggle.open{background:#fdf2df;color:#a1670f;}
   .status-toggle.done{background:#e4f4e8;color:#1c7a3d;}
   .row-del{background:#fdece8;color:#a3341f;border:none;border-radius:6px;width:26px;height:26px;font-size:14px;}
   .prio-actions{display:flex;justify-content:flex-end;margin-top:8px;}
 
-  .sig-box{border:1px solid var(--line);border-radius:10px;background:#fbfcfb;padding:10px;}
+  .sig-box{border:1px solid var(--line);border-radius:10px;background:var(--input-bg);padding:10px;}
   .sig-canvas-wrap{border:1px dashed #cdd8d0;border-radius:8px;overflow:hidden;touch-action:none;background:#fff;}
   canvas.sig{width:100%;height:110px;display:block;cursor:crosshair;}
   .sig-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
@@ -186,18 +216,18 @@
   }
   .btn-primary{background:var(--brand);color:#fff;}
   .btn-primary:hover{background:var(--brand-dark);}
-  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink);}
   .btn-ghost:hover{background:var(--bg);}
   .btn-danger{background:#fdece8;color:#a3341f;}
   .btn-sm{padding:6px 10px;font-size:12px;}
 
   .actionbar{
-    position:sticky;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+    position:sticky;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);
     padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;box-shadow:0 -6px 16px rgba(0,0,0,.04);
   }
 
   .hist-toolbar{display:flex;gap:8px;margin-bottom:12px;}
-  .hist-toolbar input{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:#fbfcfb;}
+  .hist-toolbar input{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:var(--input-bg);}
   .hist-row{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:12px 10px;border-bottom:1px solid var(--line);cursor:pointer;
@@ -221,12 +251,12 @@
   }
   .toast.show{opacity:1;bottom:88px;}
 
-  .readonly-view .field input,.readonly-view .field textarea{background:#f4f6f4;color:var(--ink);}
+  .readonly-view .field input,.readonly-view .field textarea{background:var(--bg);color:var(--ink);}
   .config-banner{
     background:#fdf2df;color:#7a4d0f;border-bottom:1px solid #eed9ad;
     padding:9px 16px;font-size:12.5px;text-align:center;font-weight:600;
   }
-  .config-banner code{background:#fff;padding:1px 6px;border-radius:5px;font-size:11.5px;}
+  .config-banner code{background:var(--surface);padding:1px 6px;border-radius:5px;font-size:11.5px;}
   .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;background:#e0b13a;}
   .sync-dot.ok{background:#4caf7d;}
   .sync-dot.err{background:#c0392b;}
@@ -244,7 +274,7 @@
   .login-card .logo img{width:100%;height:100%;object-fit:cover;display:block;}
   .login-card h2{color:var(--forest);font-size:18px;margin-bottom:4px;}
   .login-card p{color:var(--muted);font-size:13px;margin:0 0 18px;}
-  .login-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fbfcfb;margin-bottom:10px;text-align:center;}
+  .login-card input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--input-bg);margin-bottom:10px;text-align:center;}
   .login-card .btn{width:100%;justify-content:center;}
   .login-msg{font-size:12.5px;color:var(--muted);margin-top:12px;min-height:16px;}
   @media print{
@@ -264,8 +294,9 @@
   </div>
   <button class="tabbtn active" id="tab-new" onclick="showView('form')">📝 New / Edit</button>
   <button class="tabbtn" id="tab-hist" onclick="showView('history')">🕘 History</button>
-  <button class="tabbtn hidden" id="tab-admin" onclick="showView('admin')">👤 Users</button>
   <span style="font-size:11.5px;color:#cfe0d5;display:flex;align-items:center;" id="sync-indicator"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connecting...</span></span>
+  <button class="tabbtn hidden" id="btn-offline" title="No internet - saves will sync automatically once you're back online" style="background:#7a4d0f;">📴 Offline<span id="pending-count"></span></button>
+  <button class="tabbtn" id="btn-theme" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
   <button class="tabbtn" id="btn-signout" onclick="handleSignOut()">Sign Out</button>
 </div>
 <div class="config-banner hidden" id="config-banner">
@@ -369,7 +400,7 @@
 
     <div class="card">
       <div class="sec-head"><div class="sec-num">6</div><h2>Observations</h2></div>
-      <textarea id="f-observations" style="min-height:100px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;" placeholder="Birds are active with good feed intake. Maintain biosecurity and monitor respiratory signs."></textarea>
+      <textarea id="f-observations" style="min-height:100px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--input-bg);" placeholder="Birds are active with good feed intake. Maintain biosecurity and monitor respiratory signs."></textarea>
     </div>
 
     <div class="card">
@@ -384,7 +415,7 @@
 
     <div class="card">
       <div class="sec-head"><div class="sec-num">8</div><h2>Recommendations &amp; Action Plan</h2></div>
-      <textarea id="f-recommendations" style="min-height:70px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fbfcfb;" placeholder="Maintain litter quality and improve footbath solution. Continue monitoring bird weight weekly."></textarea>
+      <textarea id="f-recommendations" style="min-height:70px;width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--input-bg);" placeholder="Maintain litter quality and improve footbath solution. Continue monitoring bird weight weekly."></textarea>
     </div>
 
     <div class="card">
@@ -456,30 +487,6 @@
   <div id="view-detail" class="hidden">
     <button class="btn btn-ghost print-hide" style="margin-bottom:12px;" onclick="showView('history')">Back to History</button>
     <div id="detail-content"></div>
-  </div>
-
-  <div id="view-admin" class="hidden">
-    <div class="card">
-      <div class="sec-head"><div class="sec-num">👤</div><h2>Add a Team Member</h2></div>
-      <p style="font-size:12.5px;color:var(--muted);margin:0 0 14px;">Set a password for them yourself and share it directly (in person, WhatsApp, SMS) — no email link involved. Only people added here can ever sign in.</p>
-      <div class="grid2">
-        <div class="field"><label>Full Name</label><input type="text" id="admin-name" placeholder="e.g. Rahim Uddin"></div>
-        <div class="field"><label>Email Address</label><input type="text" id="admin-email" placeholder="name@example.com"></div>
-      </div>
-      <div class="field">
-        <label>Temporary Password</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="admin-password" placeholder="At least 6 characters" style="flex:1;">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="generatePassword()">Generate</button>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="inviteTeamMember()">Add User</button>
-      <div class="login-msg" id="admin-msg" style="text-align:left;margin-top:10px;"></div>
-    </div>
-    <div class="card">
-      <div class="sec-head"><div class="sec-num">📋</div><h2>Current Team Members</h2></div>
-      <div id="admin-user-list"><div class="empty-state">Loading...</div></div>
-    </div>
   </div>
 
 </div>
@@ -912,23 +919,10 @@ async function handleSignOut(){
   showApp(false);
 }
 
-/* Set this to your own login email - only this account sees the "Users" admin tab. */
-const ADMIN_EMAIL = "musfikurrahman@gmail.com";
-/* Set this to your deployed Netlify site URL once live, e.g. "https://cluckwise-field.netlify.app" */
-const NETLIFY_SITE_URL = "";
-
-let currentUserEmail = '';
-
 async function onSignedIn(){
   fbReady = true;
   setSync('ok', 'Synced');
   showApp(true);
-  try{
-    const { data } = await sb.auth.getUser();
-    currentUserEmail = (data && data.user && data.user.email) || '';
-  }catch(e){}
-  const isAdmin = currentUserEmail && ADMIN_EMAIL !== "YOUR_ADMIN_EMAIL@example.com" && currentUserEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-  document.getElementById('tab-admin').classList.toggle('hidden', !isAdmin);
   try{
     const no = await nextReportNo();
     document.getElementById('f-reportNo').value = no;
@@ -981,6 +975,85 @@ async function nextReportNo(){
   }
 }
 
+async function writeReportToSupabase(reportState, photosArr){
+  const mainData = Object.assign({}, reportState);
+  delete mainData.photos;
+
+  const { error: repErr } = await sb.from('reports').upsert({
+    id: reportState.id, report_no: reportState.reportNo, farm: reportState.farm, date: reportState.date,
+    status: reportState.status, updated_at: reportState.updatedAt, data: mainData
+  });
+  if(repErr) throw repErr;
+
+  const { error: delErr } = await sb.from('photos').delete().eq('report_id', reportState.id);
+  if(delErr) throw delErr;
+
+  if(photosArr.length){
+    const photoRows = photosArr.map(function(p, idx){
+      return { id: p.id, report_id: reportState.id, order_idx: idx, data: p };
+    });
+    const { error: insErr } = await sb.from('photos').insert(photoRows);
+    if(insErr) throw insErr;
+  }
+}
+
+const PENDING_KEY = 'cw-pending-reports';
+
+function getPendingQueue(){
+  try{ return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }catch(e){ return []; }
+}
+function setPendingQueue(list){
+  try{ localStorage.setItem(PENDING_KEY, JSON.stringify(list)); }catch(e){}
+  updateOfflineBadge();
+}
+function queueReportOffline(reportState, photosArr){
+  const q = getPendingQueue();
+  const idx = q.findIndex(function(item){ return item.state.id === reportState.id; });
+  const entry = { state: reportState, photos: photosArr };
+  if(idx !== -1) q[idx] = entry; else q.push(entry);
+  setPendingQueue(q);
+}
+function updateOfflineBadge(){
+  const q = getPendingQueue();
+  const btn = document.getElementById('btn-offline');
+  const countSpan = document.getElementById('pending-count');
+  if(!btn) return;
+  if(!navigator.onLine){
+    btn.classList.remove('hidden');
+    btn.childNodes[0].textContent = '📴 Offline';
+    countSpan.textContent = q.length ? (' - '+q.length+' pending') : '';
+  } else if(q.length > 0){
+    btn.classList.remove('hidden');
+    btn.childNodes[0].textContent = '🔄 Syncing';
+    countSpan.textContent = ' ('+q.length+')';
+  } else {
+    btn.classList.add('hidden');
+  }
+}
+async function flushPendingQueue(){
+  if(!navigator.onLine || !fbReady) return;
+  const q = getPendingQueue();
+  if(q.length === 0) return;
+  const remaining = [];
+  let syncedCount = 0;
+  for(const entry of q){
+    try{
+      await writeReportToSupabase(entry.state, entry.photos || []);
+      syncedCount++;
+    }catch(err){
+      console.error('Sync retry failed for', entry.state.id, err);
+      remaining.push(entry);
+    }
+  }
+  setPendingQueue(remaining);
+  if(syncedCount > 0){
+    toast(syncedCount+' offline report'+(syncedCount>1?'s':'')+' synced.');
+    if(document.getElementById('view-history') && !document.getElementById('view-history').classList.contains('hidden')){
+      renderHistoryList(document.getElementById('hist-search').value);
+    }
+  }
+}
+
 async function saveReport(status){
   collectFormIntoState();
   if(!state.farm){ toast('Please enter the Farm / Company name before saving.'); return; }
@@ -989,28 +1062,15 @@ async function saveReport(status){
   state.status = status;
   state.updatedAt = Date.now();
 
+  if(!navigator.onLine){
+    queueReportOffline(Object.assign({}, state), photos.slice());
+    toast((status==='completed'?'Report saved offline - ':'Draft saved offline - ')+'will sync automatically once you\'re back online.');
+    return;
+  }
+
   try{
     setSync('', 'Saving...');
-    const mainData = Object.assign({}, state);
-    delete mainData.photos;
-
-    const { error: repErr } = await sb.from('reports').upsert({
-      id: state.id, report_no: state.reportNo, farm: state.farm, date: state.date,
-      status: state.status, updated_at: state.updatedAt, data: mainData
-    });
-    if(repErr) throw repErr;
-
-    const { error: delErr } = await sb.from('photos').delete().eq('report_id', state.id);
-    if(delErr) throw delErr;
-
-    if(photos.length){
-      const photoRows = photos.map(function(p, idx){
-        return { id: p.id, report_id: state.id, order_idx: idx, data: p };
-      });
-      const { error: insErr } = await sb.from('photos').insert(photoRows);
-      if(insErr) throw insErr;
-    }
-
+    await writeReportToSupabase(state, photos);
     setSync('ok', 'Synced');
 
     if(status==='completed'){
@@ -1021,8 +1081,10 @@ async function saveReport(status){
     }
   }catch(err){
     console.error(err);
-    setSync('err', 'Save failed');
-    toast('Could not save - please try again.');
+    // Network-level failure even though navigator.onLine said we're online (flaky connection) - queue it.
+    queueReportOffline(Object.assign({}, state), photos.slice());
+    setSync('err', 'Offline');
+    toast('Connection issue - report saved offline and will sync automatically.');
   }
 }
 
@@ -1035,6 +1097,12 @@ function newReport(){
 
 async function renderHistoryList(filter){
   const list = document.getElementById('hist-list');
+  const f = (filter||'').toLowerCase().trim();
+  const pending = getPendingQueue().filter(function(entry){
+    if(!f) return true;
+    return (entry.state.farm||'').toLowerCase().indexOf(f)!==-1 || (entry.state.reportNo||'').toLowerCase().indexOf(f)!==-1;
+  });
+
   if(!fbReady){
     list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>Not connected to Supabase yet.<br>Set up your config to see report history.</div>';
     return;
@@ -1044,15 +1112,23 @@ async function renderHistoryList(filter){
     const { data, error } = await sb.from('reports').select('id,report_no,farm,date,status,updated_at').order('updated_at',{ascending:false}).limit(50);
     if(error) throw error;
     let rows = data || [];
-    const f = (filter||'').toLowerCase().trim();
     if(f){
       rows = rows.filter(function(e){ return (e.farm||'').toLowerCase().indexOf(f)!==-1 || (e.report_no||'').toLowerCase().indexOf(f)!==-1; });
     }
-    if(rows.length===0){
+    if(rows.length===0 && pending.length===0){
       list.innerHTML = '<div class="empty-state"><div class="ic">no reports</div>No reports found.<br>Start a new report to see it here.</div>';
       return;
     }
     list.innerHTML = '';
+    pending.forEach(function(entry){
+      const row = document.createElement('div');
+      row.className='hist-row';
+      row.onclick = function(){ loadReportIntoForm(entry.state); showView('form'); };
+      row.innerHTML =
+        '<div class="main"><div class="rno">'+entry.state.reportNo+'</div><div class="sub">'+entry.state.farm+' - '+fmtDate(entry.state.date)+'</div></div>'+
+        '<span class="badge badge-draft">Offline - Pending</span>';
+      list.appendChild(row);
+    });
     rows.forEach(function(e){
       const row = document.createElement('div');
       row.className='hist-row';
@@ -1221,82 +1297,14 @@ async function downloadPDF(){
   }
 }
 
-async function netlifyCall(path, body){
-  const { data } = await sb.auth.getSession();
-  const token = data && data.session && data.session.access_token;
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer '+token },
-    body: JSON.stringify(body||{})
-  });
-  const json = await res.json().catch(function(){ return {}; });
-  if(!res.ok) throw new Error(json.error || ('Request failed ('+res.status+')'));
-  return json;
-}
-
-function generatePassword(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  let pass = '';
-  for(let i=0;i<10;i++){ pass += chars[Math.floor(Math.random()*chars.length)]; }
-  document.getElementById('admin-password').value = pass;
-}
-
-async function inviteTeamMember(){
-  const name = document.getElementById('admin-name').value.trim();
-  const email = document.getElementById('admin-email').value.trim();
-  const password = document.getElementById('admin-password').value;
-  const msg = document.getElementById('admin-msg');
-  if(!email){ msg.textContent = 'Please enter an email address.'; return; }
-  if(!password || password.length < 6){ msg.textContent = 'Please enter or generate a password (at least 6 characters).'; return; }
-  msg.textContent = 'Adding user...';
-  try{
-    await netlifyCall('/.netlify/functions/invite-user', { name: name, email: email, password: password });
-    msg.textContent = 'Added '+email+'. Share this password with them: '+password;
-    document.getElementById('admin-name').value = '';
-    document.getElementById('admin-email').value = '';
-    document.getElementById('admin-password').value = '';
-    renderAdminUserList();
-  }catch(err){
-    console.error(err);
-    msg.textContent = 'Could not add user: '+err.message;
-  }
-}
-
-async function renderAdminUserList(){
-  const list = document.getElementById('admin-user-list');
-  list.innerHTML = '<div class="empty-state">Loading...</div>';
-  try{
-    const result = await netlifyCall('/.netlify/functions/list-users', {});
-    const users = result.users || [];
-    if(users.length===0){ list.innerHTML = '<div class="empty-state">No team members invited yet.</div>'; return; }
-    list.innerHTML = '';
-    users.forEach(function(u){
-      const row = document.createElement('div');
-      row.className = 'hist-row';
-      row.style.cursor = 'default';
-      const name = (u.user_metadata && u.user_metadata.name) || '-';
-      const confirmed = u.email_confirmed_at ? 'Active' : 'Invited (pending)';
-      row.innerHTML =
-        '<div class="main"><div class="rno">'+escHtml(u.email)+'</div><div class="sub">'+escHtml(name)+'</div></div>'+
-        '<span class="badge '+(u.email_confirmed_at?'badge-completed':'badge-draft')+'">'+confirmed+'</span>';
-      list.appendChild(row);
-    });
-  }catch(err){
-    console.error(err);
-    list.innerHTML = '<div class="empty-state">Could not load team members: '+err.message+'</div>';
-  }
-}
 function showView(v){
   document.getElementById('view-form').classList.toggle('hidden', v!=='form');
   document.getElementById('view-history').classList.toggle('hidden', v!=='history');
   document.getElementById('view-detail').classList.toggle('hidden', v!=='detail');
-  document.getElementById('view-admin').classList.toggle('hidden', v!=='admin');
   document.getElementById('tab-new').classList.toggle('active', v==='form');
   document.getElementById('tab-hist').classList.toggle('active', v==='history' || v==='detail');
-  document.getElementById('tab-admin').classList.toggle('active', v==='admin');
   document.getElementById('actionbar').classList.toggle('hidden', v!=='form');
   if(v==='history') renderHistoryList(document.getElementById('hist-search').value);
-  if(v==='admin') renderAdminUserList();
   window.scrollTo({top:0, behavior:'instant'});
 }
 
@@ -1310,13 +1318,43 @@ function toast(msg){
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
 }
 
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  const btn = document.getElementById('btn-theme');
+  if(btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+  try{ localStorage.setItem('cw-theme', t); }catch(e){}
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('cw-theme'); }catch(e){}
+  if(!saved){
+    saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  applyTheme(saved);
+}
+
 (async function init(){
+  initTheme();
   setupSig('sig-consultant','consultant');
   setupSig('sig-owner','owner');
   state = blankReport();
   loadReportIntoForm(state);
   showApp(false);
+
+  window.addEventListener('online', function(){ updateOfflineBadge(); flushPendingQueue(); });
+  window.addEventListener('offline', function(){ updateOfflineBadge(); });
+  updateOfflineBadge();
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(err){ console.warn('Service worker registration failed:', err); });
+  }
+
   await initBackend();
+  if(fbReady) flushPendingQueue();
 })();
 </script>
 </body>
